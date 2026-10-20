@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>検査項目・参考値暗記</title>
+
+<style>
+    body {
+        font-family: sans-serif;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 24px;
+    }
+
+    .box {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    select, button {
+        font-size: 18px;
+        padding: 10px 16px;
+        margin: 5px;
+        cursor: pointer;
+    }
+
+    #question {
+        font-size: 32px;
+        font-weight: bold;
+        text-align: center;
+        margin: 40px 0 25px;
+    }
+
+    #answer {
+        font-size: 24px;
+        text-align: center;
+        margin: 20px 0;
+        min-height: 35px;
+    }
+
+    .answer-buttons {
+        text-align: center;
+    }
+
+    .correct {
+        background: #d9f7d9;
+    }
+
+    .wrong {
+        background: #ffdede;
+    }
+
+    #progress {
+        text-align: center;
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+
+    #message {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>検査項目・参考値暗記</h1>
+
+<p>使い方</p>
+<p>①まずは、１回の挑戦で覚えたい量を選ぼう。</p>
+<p>②表示された検査項目の参考値を言って「正解を表示」を押そう。言えたら〇、言えなかったら✖を押そう。</p>
+<p>　→　✖が押された項目は、〇が押されるまで再出題されるよ。</p>
+
+<!-- 開始画面 -->
+<div id="startScreen" class="box">
+
+    <h2>1回の挑戦で覚える量</h2>
+
+    <select id="mode">
+        <option value="5">5種類</option>
+        <option value="10">10種類</option>
+        <option value="50">半分（34種類）</option>
+        <option value="100">全て（68種類）</option>
+    </select>
+
+    <br>
+
+    <button onclick="startGame()">スタート</button>
+
+</div>
+
+
+<!-- 問題画面 -->
+<div id="gameScreen" class="box hidden">
+
+    <div id="progress"></div>
+
+    <div id="question"></div>
+
+    <div style="text-align:center;">
+        <button onclick="showAnswer()">正解を表示</button>
+    </div>
+
+    <div id="answer"></div>
+
+    <div class="answer-buttons">
+
+        <button class="correct" onclick="markCorrect()">○</button>
+
+        <button class="wrong" onclick="markWrong()">✕</button>
+
+    </div>
+
+</div>
+
+
+<!-- 結果画面 -->
+<div id="resultScreen" class="box hidden">
+
+    <div id="message"></div>
+
+    <br>
+
+    <div style="text-align:center;">
+        <button onclick="location.reload()">もう一度</button>
+    </div>
+
+</div>
+
+
+<script>
+
+// ========================================
+// 参考値データ
+// ========================================
+
+const data = [
+    ["総蛋白", "6.7~8.3"],
+    ["アルブミン", "3.9~4.9"],
+    ["総コレステロール", "150~219"],
+    ["HDLコレステロール", "40~86"],
+    ["LDLコレステロール(F式)", "70~139"],
+    ["中性脂肪", "50~149"],
+    ["総ビリルビン", "0.20~1.20"],
+    ["直接ビリルビン", "0.20以下"],
+    ["ALP_IFCC", "38~113"],
+    ["ALP_JSカン", "115~359"],
+    ["γ-GT", "70以下"],
+    ["コリンエステラーゼ", "242~495"],
+    ["AST(GOT)", "10~40"],
+    ["ALT(GPT)", "5~40"],
+    ["LD(LDH)", "124~222"],
+    ["CK(CPK)", "62~287"],
+    ["血清アミラーゼ", "37~125"],
+    ["CK-MB", "5以下"],
+    ["ナトリウム", "136~147"],
+    ["カリウム", "3.6~5.0"],
+    ["クロール", "98~109"],
+    ["カルシウム", "8.7~10.1"],
+    ["リン", "2.5~4.5"],
+    ["マグネシウム", "1.8~2.6"],
+    ["尿素窒素", "8.0~22.0"],
+    ["クレアチニン", "0.61~1.04"],
+    ["eGFR", "60以上"],
+    ["尿酸", "3.7~7.0"],
+    ["血清鉄", "54~200"],
+    ["TIBC", "253~365"],
+    ["UIBC", "104~259"],
+    ["フェリチン", "50~200"],
+    ["血糖", "70~110"],
+    ["HbAlc", "4.6~6.2"],
+    ["CRP(定量)", "0.30以下"],
+    ["トポロニンT", "0.018以下"],
+    ["白血球数", "4000~9000"],
+    ["赤血球数", "420~570"],
+    ["ヘモグロビン", "13.5~17.5"],
+    ["ヘマトクリット", "40.0~52.0"],
+    ["MCV", "80~100"],
+    ["MCH", "25~35"],
+    ["MCHC", "31.0~36.6"],
+    ["血小板数", "13.0~37.0"],
+    ["血液像", "？"],
+    ["好中球", "40.0~74.0"],
+    ["リンパ球", "20.0~60.0"],
+    ["単球", "0.0~8.0"],
+    ["好酸球", "0.0~7.0"],
+    ["好塩基球", "0.0~2.0"],
+    ["尿比重", "1.002~1.030"],
+    ["尿pH", "5.0~8.0"],
+    ["尿蛋白", "マイナス"],
+    ["尿糖(定性)", "マイナス"],
+    ["尿ケトン体", "マイナス"],
+    ["尿潜血", "マイナス"],
+    ["ウロビリノーゲン", "プラスマイナス"],
+    ["尿ビリルビン", "マイナス"],
+    ["白血球反応", "マイナス"],
+    ["尿沈渣", "？"],
+    ["赤血球", "？"],
+    ["白血球", "？"],
+    ["扁平上皮", "？"],
+    ["尿路上皮細胞", "？"],
+    ["尿細管上皮細胞", "？"],
+    ["細菌", "？"],
+    ["乳び", "？"],
+    ["溶血", "？"]
+];
+
+
+// ========================================
+// ゲーム用変数
+// ========================================
+
+let questions = [];       // 今回覚える問題
+let remaining = [];       // まだ○になっていない問題
+let currentQuestion = null;
+let targetCount = 0;
+
+
+// ========================================
+// 配列をシャッフルする関数
+// ========================================
+
+function shuffle(array) {
+
+    const newArray = [...array];
+
+    for (let i = newArray.length - 1; i > 0; i--) {
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [newArray[i], newArray[j]] =
+        [newArray[j], newArray[i]];
+    }
+
+    return newArray;
+}
+
+
+// ========================================
+// ゲーム開始
+// ========================================
+
+function startGame() {
+
+    const mode = document.getElementById("mode").value;
+
+    // 問題をシャッフル
+    const shuffled = shuffle(data);
+
+    if (mode === "5") {
+
+        targetCount = Math.min(5, data.length);
+
+    } else if (mode === "10") {
+
+        targetCount = Math.min(10, data.length);
+
+    } else if (mode === "50") {
+
+        targetCount = Math.ceil(data.length * 0.5);
+
+    } else {
+
+        targetCount = data.length;
+
+    }
+
+    // 今回覚える問題を決定
+    questions = shuffled.slice(0, targetCount);
+
+    // 最初は全部「まだ○になっていない」
+    remaining = [...questions];
+
+    // 画面切り替え
+    document.getElementById("startScreen")
+        .classList.add("hidden");
+
+    document.getElementById("gameScreen")
+        .classList.remove("hidden");
+
+    nextQuestion();
+}
+
+
+// ========================================
+// 次の問題を出す
+// ========================================
+
+function nextQuestion() {
+
+    // 全問○になった
+    if (remaining.length === 0) {
+
+        finishGame();
+
+        return;
+    }
+
+    // 残っている問題からランダムに1問
+    const randomIndex =
+        Math.floor(Math.random() * remaining.length);
+
+    currentQuestion = remaining[randomIndex];
+
+    // 問題表示
+    document.getElementById("question").textContent =
+        currentQuestion[0];
+
+    // 答えは最初は非表示
+    document.getElementById("answer").textContent = "";
+
+    // 進捗表示
+    const completed =
+        questions.length - remaining.length;
+
+    document.getElementById("progress").textContent =
+        `達成：${completed} / ${questions.length}`;
+}
+
+
+// ========================================
+// 正解を表示
+// ========================================
+
+function showAnswer() {
+
+    document.getElementById("answer").textContent =
+        currentQuestion[1];
+
+}
+
+
+// ========================================
+// ○を押した場合
+// ========================================
+
+function markCorrect() {
+
+    // currentQuestionをremainingから削除
+    remaining = remaining.filter(
+        item => item !== currentQuestion
+    );
+
+    nextQuestion();
+}
+
+
+// ========================================
+// ✕を押した場合
+// ========================================
+
+function markWrong() {
+
+    // 問題はremainingに残す
+    // つまり、あとで再び出題される
+
+    nextQuestion();
+}
+
+
+// ========================================
+// 全問終了
+// ========================================
+
+function finishGame() {
+
+    document.getElementById("gameScreen")
+        .classList.add("hidden");
+
+    document.getElementById("resultScreen")
+        .classList.remove("hidden");
+
+    document.getElementById("message").textContent =
+        `🎉 ${questions.length}種類、すべて覚えました！`;
+}
+
+</script>
+
+</body>
+</html>
